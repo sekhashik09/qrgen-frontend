@@ -4,6 +4,7 @@ import { Transition } from '@headlessui/react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import { PropagateLoader } from 'react-spinners';
 
 function App() {
   const [text, setText] = useState('');
@@ -11,6 +12,7 @@ function App() {
   const [downloadLink, setDownloadLink] = useState('');
   const [size, setSize] = useState(150);
   const [color, setColor] = useState('#000000');
+  const [loading, setLoading] = useState(false);
 
   const isValidUrl = (string) => {
     try {
@@ -27,9 +29,10 @@ function App() {
     setDownloadLink('');
 
     if (!isValidUrl(text)) {
-      toast.error('Please enter a valid URL.');
+      toast.error('😞 Please enter a valid URL.');
       return;
     }
+    setLoading(true);
 
     try {
       const response = await axios.post('https://qrgen-backend-cpu1.onrender.com/generate-qr', { text, color, width: size, height: size }, {
@@ -40,7 +43,6 @@ function App() {
       const downloadUrl = window.URL.createObjectURL(pdfBlob);
       setDownloadLink(downloadUrl);
 
-      // Generate QR code
       const qrCodeData = await axios.post('https://api.qrserver.com/v1/create-qr-code/', null, {
         params: {
           data: text,
@@ -54,9 +56,11 @@ function App() {
       const qrCodeUrl = window.URL.createObjectURL(qrCodeBlob);
       setQrCodeImage(qrCodeUrl);
 
-      toast.success('QR Code generated successfully!');
+      toast.success('😮 Your QR Code is Ready!');
     } catch (err) {
-      toast.error('Failed to generate QR code. Try again.');
+      toast.error('😞 Failed to generate QR. Try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,11 +69,12 @@ function App() {
     link.href = downloadLink;
     link.download = 'qr_code.pdf';
     link.click();
-    toast.success('Download started!');
+    toast.success('🤔 Download started!');
 
     setTimeout(() => {
-      toast.success('Download completed!');
-    }, 1000); 
+      toast.success('😊 Download completed!');
+      window.URL.revokeObjectURL(downloadLink); 
+    }, 1000);
   };
 
   return (
@@ -117,8 +122,11 @@ function App() {
             <button
               type="submit"
               className="w-full bg-blue-600 text-white p-4 rounded-xl font-semibold hover:bg-blue-700 transition"
+              disabled={loading}
             >
-              Generate Your QR Code
+              {loading ? (
+                <PropagateLoader size={10} text-alignment="center" color="#28dac4" />
+              ) : 'Generate Your QR Code'}
             </button>
           </form>
 
@@ -166,7 +174,6 @@ function App() {
           </Transition>
         </div>
 
-        {/* Extended Image Section */}
         <div className="flex-shrink-0 mt-8 lg:mt-0 lg:ml-10">
           <img
             src="https://nordvpn.com/wp-content/uploads/blog-social-how-to-scan-QR-code-1200x628-1.jpg"
